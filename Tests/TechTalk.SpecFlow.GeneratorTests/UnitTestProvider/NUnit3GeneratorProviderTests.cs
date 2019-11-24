@@ -335,7 +335,29 @@ namespace TechTalk.SpecFlow.GeneratorTests.UnitTestProvider
             attribute.Should().BeNull("Parallelizable attribute was found");
         }
 
-       
+        [Fact]
+        public void NUnit3TestGeneratorProvider_ShouldAddTimeoutAttributeWhenTimeoutTagIsAdded()
+        {
+            const string featureFileWithParallelizeIgnore = @"
+            @nunit:timeout:10000
+            Feature: Time critical feature
+
+            Scenario: Simple scenario
+                Given there is something
+                When I do something
+                Then something should happen";
+
+            var code = GenerateCodeNamespaceFromFeature(featureFileWithParallelizeIgnore);
+
+            var method = code.Class().Members().FirstOrDefault(m => m.Name == "SimpleScenario");
+            method.Should().NotBeNull("SimpleScenario test method was not generated");
+
+            var attribute = method.CustomAttributes.OfType<CodeAttributeDeclaration>().FirstOrDefault(a => a.Name == "NUnit.Framework.TimeoutAttribute");
+            attribute.Should().NotBeNull("Timeout attribute was not set");
+
+            var attributeArguments = attribute.Arguments.OfType<CodeAttributeArgument>().Select(arg => (arg.Value as CodePrimitiveExpression).Value);
+            attributeArguments.Should().BeEquivalentTo(new[] { 10000 }, "Timeout is set to wrong value");
+        }
 
         public CodeNamespace GenerateCodeNamespaceFromFeature(string feature, bool parallelCode = false, string[] ignoreParallelTags = null)
         {

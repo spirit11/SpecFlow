@@ -3,6 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using TechTalk.SpecFlow.Generator.CodeDom;
 using BoDi;
+using System.Linq;
 
 namespace TechTalk.SpecFlow.Generator.UnitTestProvider
 {
@@ -17,10 +18,13 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
         protected internal const string TESTTEARDOWN_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
         protected internal const string IGNORE_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.IgnoreAttribute";
         protected internal const string DESCRIPTION_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute";
+        protected internal const string TIMEOUT_ATTR = "Microsoft.VisualStudio.TestTools.UnitTesting.TimeoutAttribute";
         protected internal const string FEATURE_TITILE_PROPERTY_NAME = "FeatureTitle";
         protected internal const string TESTCONTEXT_TYPE = "Microsoft.VisualStudio.TestTools.UnitTesting.TestContext";
         protected internal const string TESTCONTEXT_FIELD_NAME = "_testContext";
         protected internal const string TESTCONTEXT_PROPERTY_NAME = "TestContext";
+        
+        protected internal const string TIMEOUT_TAG = "@mstest:timeout";
 
         protected CodeDomHelper CodeDomHelper { get; set; }
 
@@ -169,6 +173,14 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
             CodeDomHelper.AddAttribute(testMethod, TEST_ATTR);
             CodeDomHelper.AddAttribute(testMethod, DESCRIPTION_ATTR, friendlyTestName);
 
+            var timeoutTag = generationContext.Feature.Tags.FirstOrDefault(tag => tag.Name.StartsWith(TIMEOUT_TAG));
+            if (timeoutTag != null)
+            {
+                var timeout = Convert.ToInt32(
+                    timeoutTag.Name.Substring(TIMEOUT_TAG.Length).Trim(' ', ':'));
+
+                CodeDomHelper.AddAttribute(testMethod, TIMEOUT_ATTR, timeout);
+            }
             //as in mstest, you cannot mark classes with the description attribute, we
             //just apply it for each test method as a property
             SetProperty(testMethod, FEATURE_TITILE_PROPERTY_NAME, generationContext.Feature.Name);

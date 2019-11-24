@@ -1,3 +1,4 @@
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +20,11 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
         protected internal const string TESTTEARDOWN_ATTR = "NUnit.Framework.TearDownAttribute";
         protected internal const string IGNORE_ATTR = "NUnit.Framework.IgnoreAttribute";
         protected internal const string DESCRIPTION_ATTR = "NUnit.Framework.DescriptionAttribute";
+        protected internal const string TIMEOUT_ATTR = "NUnit.Framework.TimeoutAttribute";
         protected internal const string TESTCONTEXT_TYPE = "NUnit.Framework.TestContext";
         protected internal const string TESTCONTEXT_INSTANCE = "NUnit.Framework.TestContext.CurrentContext";
+
+        protected internal const string TIMEOUT_TAG = "@nunit:timeout";
 
         public NUnit3TestGeneratorProvider(CodeDomHelper codeDomHelper)
         {
@@ -102,6 +106,15 @@ namespace TechTalk.SpecFlow.Generator.UnitTestProvider
         {
             CodeDomHelper.AddAttribute(testMethod, TEST_ATTR);
             CodeDomHelper.AddAttribute(testMethod, DESCRIPTION_ATTR, friendlyTestName);
+
+            var timeoutTag = generationContext.Feature.Tags.FirstOrDefault(tag => tag.Name.StartsWith(TIMEOUT_TAG));
+            if (timeoutTag != null)
+            {
+                var timeout = Convert.ToInt32(
+                    timeoutTag.Name.Substring(TIMEOUT_TAG.Length).Trim(' ', ':'));
+
+                CodeDomHelper.AddAttribute(testMethod, TIMEOUT_ATTR, timeout);
+            }
         }
 
         public void SetTestMethodCategories(TestClassGenerationContext generationContext, CodeMemberMethod testMethod, IEnumerable<string> scenarioCategories)
